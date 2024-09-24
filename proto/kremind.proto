@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package kremind;
+
+option go_package = "github.com/brotherlogic/kremind/proto";
+
+message Reminder {
+    int64 id = 1;
+
+    int64 start_time = 2;
+    int64 repeat_in_seconds = 3;
+
+    string reminder = 4;
+
+    string source = 5;
+    int32 current = 6;
+}
+
+message AddReminderRequest {
+    int64 start_time = 1;
+    int64 repeat_in_seconds = 2;
+    string reminder = 3;
+    string source = 4;
+}
+
+message AddReminderResponse {
+    int64 id = 1;
+}
+
+message ListRemindersRequest {}
+
+message ListRemindersResponse {
+    repeated Reminder reminders = 1;
+}
+
+service KremindService {
+  rpc AddReminder(AddReminderRequest) returns (AddReminderResponse) {};
+  rpc ListReminders(ListRemindersRequest) returns (ListRemindersResponse) {};
+}
