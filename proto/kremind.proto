@@ -4,6 +4,10 @@ package kremind;
 
 option go_package = "github.com/brotherlogic/kremind/proto";
 
+message Reminders {
+    repeated Reminder reminders = 1;
+}
+
 message Reminder {
     int64 id = 1;
 
