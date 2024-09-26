@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -23,8 +22,6 @@ var (
 
 func main() {
 	flag.Parse()
-
-	ctx := context.Background()
 
 	s := server.NewServer(db.GetDB())
 
