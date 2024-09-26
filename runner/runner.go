@@ -19,15 +19,18 @@ const (
 )
 
 type ATimer struct {
-	abanson bool
+	abandon bool
 	timer   *time.Timer
 }
 
 func NewTimer(t time.Duration) *ATimer {
-	return &ATimer{
-		abanson: false,
+	log.Printf("Waiting %v", t)
+	tr := &ATimer{
+		abandon: false,
 		timer:   time.NewTimer(t),
 	}
+
+	return tr
 }
 
 func (a *ATimer) Wait() {
@@ -39,12 +42,24 @@ type Runner struct {
 	tMap         map[int64]*ATimer
 	mapLock      *sync.RWMutex
 	ghclient     ghbclient.GithubridgeClient
-	db           db.DB
+	db           *db.DB
+}
+
+func GetTestRunner() *Runner {
+	return &Runner{
+		ghclient: ghbclient.GetTestClient(),
+		db:       db.GetTestDB(),
+		mapLock:  &sync.RWMutex{},
+		tMap:     make(map[int64]*ATimer),
+	}
 }
 
 func getNextRunTime(re *pb.Reminder, now time.Time) time.Time {
 	if re.GetLastRunTime() == 0 {
-		return time.Unix(re.GetStartTime(), 0)
+		if re.GetStartTime() > 0 {
+			return time.Unix(re.GetStartTime(), 0)
+		}
+		return now
 	}
 
 	// If we previously failed, wait the backoff and retry
@@ -56,6 +71,7 @@ func getNextRunTime(re *pb.Reminder, now time.Time) time.Time {
 }
 
 func (r *Runner) runReminder(ctx context.Context, re *pb.Reminder) error {
+	log.Printf("Running %v", re)
 	_, err := r.ghclient.CreateIssue(ctx, &ghbpb.CreateIssueRequest{
 		Title: re.GetReminder(),
 		Body:  "From your reminders",
@@ -68,30 +84,39 @@ func (r *Runner) runReminder(ctx context.Context, re *pb.Reminder) error {
 func (r *Runner) AddReminder(ctx context.Context, now time.Time, re *pb.Reminder) error {
 	if timer, ok := r.tMap[re.GetId()]; ok {
 		// Cancel the existing timer
-		timer.abanson = true
+		timer.abandon = true
 	}
 
 	// Create and store a new timer
 	r.mapLock.Lock()
 	r.tMap[re.GetId()] = NewTimer(now.Sub(getNextRunTime(re, now)))
 	go func() {
+		// Wait for the reminder to trigger and then delete it
 		r.tMap[re.GetId()].Wait()
+		val := r.tMap[re.GetId()]
+		delete(r.tMap, re.GetId())
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		defer cancel()
-		err := r.runReminder(ctx, re)
-		log.Printf("Ran Reminder %v -> %v", re, err)
+		// Only run this if we've not abandoned it
+		if !val.abandon {
+			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+			defer cancel()
+			err := r.runReminder(ctx, re)
+			log.Printf("Ran Reminder %v -> %v", re, err)
 
-		// Adjust the reminder and reup accordingly
-		re.LastRunTime = now.Unix()
-		if err != nil {
-			re.LastFailure = fmt.Sprintf("%v", err)
-		} else {
-			re.LastFailure = ""
+			// Adjust the reminder and reup accordingly
+			re.LastRunTime = now.Unix()
+			if err != nil {
+				re.LastFailure = fmt.Sprintf("%v", err)
+			} else {
+				re.LastFailure = ""
+			}
+
+			// There's not much we can do if the save fails, so ignore return here
+			r.db.SaveReminder(ctx, re)
+
+			// Re up the reminder
+			r.AddReminder(ctx, time.Now(), re)
 		}
-
-		// There's not much we can do if the save fails, so ignore return here
-		r.db.SaveReminder(ctx, re)
 	}()
 	r.mapLock.Unlock()
 

@@ -21,6 +21,12 @@ type DB struct {
 	rclient rstore_client.RStoreClient
 }
 
+func GetTestDB() *DB {
+	return &DB{
+		rclient: rstore_client.GetTestClient(),
+	}
+}
+
 func (d *DB) SaveReminder(ctx context.Context, r *pb.Reminder) error {
 
 	data, err := proto.Marshal(r)
