@@ -13,11 +13,14 @@ message Reminder {
 
     int64 start_time = 2;
     int64 repeat_in_seconds = 3;
+    int64 last_run_time = 4;
 
-    string reminder = 4;
+    string reminder = 5;
 
-    string source = 5;
-    int32 current = 6;
+    string source = 6;
+    int32 current = 7;
+
+    string last_failure = 8;
 }
 
 message AddReminderRequest {
