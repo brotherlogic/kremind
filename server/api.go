@@ -10,7 +10,11 @@ import (
 )
 
 type Server struct {
-	db db.DB
+	db *db.DB
+}
+
+func NewServer(db *db.DB) *Server {
+	return &Server{db: db}
 }
 
 func (s *Server) AddReminder(ctx context.Context, req *pb.AddReminderRequest) (*pb.AddReminderResponse, error) {

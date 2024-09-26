@@ -21,6 +21,14 @@ type DB struct {
 	rclient rstore_client.RStoreClient
 }
 
+func GetDB() *DB {
+	client, err := rstore_client.GetClient()
+	if err != nil {
+		return nil
+	}
+	return &DB{rclient: client}
+}
+
 func GetTestDB() *DB {
 	return &DB{
 		rclient: rstore_client.GetTestClient(),
