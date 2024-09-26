@@ -51,4 +51,7 @@ func TestRunReminder(t *testing.T) {
 	if reminders2[0].GetLastRunTime() == reminders[0].GetLastRunTime() {
 		t.Errorf("Reminder was not rerun: %v -> %v", reminders[0], reminders2[0])
 	}
+
+	// Shutdown the runner
+	runner.Stop()
 }

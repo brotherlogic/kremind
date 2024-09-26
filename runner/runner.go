@@ -64,7 +64,7 @@ func getNextRunTime(re *pb.Reminder, now time.Time) time.Time {
 
 	// If we previously failed, wait the backoff and retry
 	if re.GetLastFailure() != "" {
-		return now.Add(BACKOFF)
+		return time.Unix(re.GetLastRunTime(), 0).Add(BACKOFF)
 	}
 
 	return time.Unix(re.GetLastRunTime(), 0).Add(time.Duration(re.GetRepeatInSeconds()) * time.Second)
@@ -81,6 +81,13 @@ func (r *Runner) runReminder(ctx context.Context, re *pb.Reminder) error {
 	return err
 }
 
+func (r *Runner) Stop() {
+	r.mapLock.Lock()
+	for _, val := range r.tMap {
+		val.abandon = true
+	}
+}
+
 func (r *Runner) AddReminder(ctx context.Context, now time.Time, re *pb.Reminder) error {
 	if timer, ok := r.tMap[re.GetId()]; ok {
 		// Cancel the existing timer
@@ -89,7 +96,8 @@ func (r *Runner) AddReminder(ctx context.Context, now time.Time, re *pb.Reminder
 
 	// Create and store a new timer
 	r.mapLock.Lock()
-	r.tMap[re.GetId()] = NewTimer(now.Sub(getNextRunTime(re, now)))
+	log.Printf("%v -> %v and %v", re, now, getNextRunTime(re, now))
+	r.tMap[re.GetId()] = NewTimer((getNextRunTime(re, now).Sub(now)))
 	go func() {
 		// Wait for the reminder to trigger and then delete it
 		r.tMap[re.GetId()].Wait()
@@ -111,6 +119,7 @@ func (r *Runner) AddReminder(ctx context.Context, now time.Time, re *pb.Reminder
 				re.LastFailure = ""
 			}
 
+			log.Printf("Saving %v", re)
 			// There's not much we can do if the save fails, so ignore return here
 			r.db.SaveReminder(ctx, re)
 

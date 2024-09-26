@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
@@ -19,6 +20,7 @@ const (
 
 type DB struct {
 	rclient rstore_client.RStoreClient
+	lock    sync.Mutex
 }
 
 func GetDB() *DB {
@@ -36,6 +38,8 @@ func GetTestDB() *DB {
 }
 
 func (d *DB) SaveReminder(ctx context.Context, r *pb.Reminder) error {
+	d.lock.Lock()
+	defer d.lock.Unlock()
 
 	data, err := proto.Marshal(r)
 	if err != nil {
@@ -49,6 +53,9 @@ func (d *DB) SaveReminder(ctx context.Context, r *pb.Reminder) error {
 }
 
 func (d *DB) LoadReminders(ctx context.Context) ([]*pb.Reminder, error) {
+	d.lock.Lock()
+	defer d.lock.Unlock()
+
 	keys, err := d.rclient.GetKeys(ctx, &rspb.GetKeysRequest{
 		Prefix: REMINDER_KEY,
 	})
