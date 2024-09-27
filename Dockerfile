@@ -32,7 +32,7 @@ FROM gcr.io/distroless/base-debian11
 
 WORKDIR /
 
-COPY --from=build /kremind /kfremind
+COPY --from=build /kremind /kremind
 
 EXPOSE 80
 EXPOSE 8080
