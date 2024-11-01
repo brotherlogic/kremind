@@ -42,12 +42,12 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: kfremind
+  name: kremind
   namespace: kremind
 spec:
   selector:
     matchLabels:
-      app: kfremind
+      app: kremind
   replicas: 3
   template:
     metadata:
