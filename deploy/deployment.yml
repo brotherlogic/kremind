@@ -56,7 +56,7 @@ spec:
     spec:
       containers:
         - name: kremind
-          image: registry.brotherlogic-backend.com/brotherlogic/kremind:0.18.0 # {"$imagepolicy": "flux-system:kremind"}
+          image: registry.brotherlogic-backend.com/brotherlogic/kremind:0.9.0 # {"$imagepolicy": "flux-system:kremind"}
           ports:
             - containerPort: 8080
       imagePullSecrets:
