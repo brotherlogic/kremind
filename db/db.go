@@ -52,6 +52,16 @@ func (d *DB) SaveReminder(ctx context.Context, r *pb.Reminder) error {
 	return err
 }
 
+func (d *DB) DeleteReminder(ctx context.Context, id int64) error {
+	d.lock.Lock()
+	defer d.lock.Unlock()
+
+	_, err := d.pclient.Delete(ctx, &pspb.DeleteRequest{
+		Key: fmt.Sprintf("%v%v", REMINDER_KEY, id),
+	})
+	return err
+}
+
 func (d *DB) LoadReminders(ctx context.Context) ([]*pb.Reminder, error) {
 	d.lock.Lock()
 	defer d.lock.Unlock()

@@ -36,3 +36,7 @@ func (s *Server) ListReminders(ctx context.Context, req *pb.ListRemindersRequest
 	}
 	return &pb.ListRemindersResponse{Reminders: reminders}, nil
 }
+
+func (s *Server) DeleteReminder(ctx context.Context, req *pb.DeleteReinderRequest) (*pb.DeleteReminderResponse, error) {
+	return &pb.DeleteReminderResponse{}, s.db.DeleteReminder(ctx, req.GetId())
+}
