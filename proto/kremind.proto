@@ -34,7 +34,9 @@ message AddReminderResponse {
     int64 id = 1;
 }
 
-message ListRemindersRequest {}
+message ListRemindersRequest {
+    int64 timestamp_seconds = 1;
+}
 
 message ListRemindersResponse {
     repeated Reminder reminders = 1;
