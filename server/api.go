@@ -14,6 +14,9 @@ type Server struct {
 }
 
 func NewServer(db *db.DB) *Server {
+	if db == nil {
+		return nil
+	}
 	return &Server{db: db}
 }
 

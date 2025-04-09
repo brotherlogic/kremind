@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
+	"log"
 	"sync"
 
 	"google.golang.org/protobuf/proto"
@@ -26,6 +27,7 @@ type DB struct {
 func GetDB() *DB {
 	client, err := pstore_client.GetClient()
 	if err != nil {
+		log.Printf("Unable to get pstore client: %v", err)
 		return nil
 	}
 	return &DB{pclient: client}
