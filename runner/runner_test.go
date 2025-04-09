@@ -21,6 +21,7 @@ func TestRunReminder(t *testing.T) {
 	runner.db.SaveReminder(context.Background(), r)
 	runner.AddReminder(context.Background(), ti, r)
 
+	// Sleep for two seconds - short enough to run the reminder, but not long enough to let it run twice
 	time.Sleep(time.Second * 2)
 
 	reminders, err := runner.db.LoadReminders(context.Background())
