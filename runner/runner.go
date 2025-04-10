@@ -88,6 +88,19 @@ func (r *Runner) Stop() {
 	}
 }
 
+func (r *Runner) DeleteReminder(ctx context.Context, re int64) error {
+	r.mapLock.Lock()
+	defer r.mapLock.Unlock()
+
+	if val, ok := r.tMap[re]; ok {
+		val.abandon = true
+		r.db.DeleteReminder(ctx, re)
+		return nil
+	}
+
+	return nil
+}
+
 func (r *Runner) AddReminder(ctx context.Context, now time.Time, re *pb.Reminder) error {
 	if timer, ok := r.tMap[re.GetId()]; ok {
 		// Cancel the existing timer
@@ -103,6 +116,8 @@ func (r *Runner) AddReminder(ctx context.Context, now time.Time, re *pb.Reminder
 		r.tMap[re.GetId()].Wait()
 		val := r.tMap[re.GetId()]
 		delete(r.tMap, re.GetId())
+
+		log.Printf("Reminder: %+v", val)
 
 		// Only run this if we've not abandoned it
 		if !val.abandon {
