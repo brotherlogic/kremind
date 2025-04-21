@@ -1,0 +1,63 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: kremind
+  namespace: kremind
+  labels:
+    app: kremind
+spec:
+  type: NodePort
+  metadata:
+    labels:
+      app: kremind
+  ports:
+    - name: grpc
+      port: 8080
+      targetPort: 8080
+    - name: metrics
+      port: 8081
+      targetPort: 8081
+  selector:
+    app: kremind
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: kremind
+  namespace: kremind
+  labels:
+    release: kube-prometheus-stack
+spec:
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 30s
+  namespaceSelector:
+    matchNames:
+      - kremind
+  selector:
+    matchLabels:
+      app: kremind
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kremind
+  namespace: kremind
+spec:
+  selector:
+    matchLabels:
+      app: kremind
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: kremind
+    spec:
+      containers:
+        - name: kremind
+          image: registry.brotherlogic-backend.com/brotherlogic/kremind:0.10.0 # {"$imagepolicy": "flux-system:kremind"}
+          ports:
+            - containerPort: 8080
+      imagePullSecrets:
+        - name: regcred

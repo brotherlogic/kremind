@@ -3,15 +3,16 @@ package db
 import (
 	"context"
 	"fmt"
+	"log"
 	"sync"
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 
-	rstore_client "github.com/brotherlogic/rstore/client"
+	pstore_client "github.com/brotherlogic/pstore/client"
 
 	pb "github.com/brotherlogic/kremind/proto"
-	rspb "github.com/brotherlogic/rstore/proto"
+	pspb "github.com/brotherlogic/pstore/proto"
 )
 
 const (
@@ -19,21 +20,22 @@ const (
 )
 
 type DB struct {
-	rclient rstore_client.RStoreClient
+	pclient pstore_client.PStoreClient
 	lock    sync.Mutex
 }
 
 func GetDB() *DB {
-	client, err := rstore_client.GetClient()
+	client, err := pstore_client.GetClient()
 	if err != nil {
+		log.Printf("Unable to get pstore client: %v", err)
 		return nil
 	}
-	return &DB{rclient: client}
+	return &DB{pclient: client}
 }
 
 func GetTestDB() *DB {
 	return &DB{
-		rclient: rstore_client.GetTestClient(),
+		pclient: pstore_client.GetTestClient(),
 	}
 }
 
@@ -45,9 +47,19 @@ func (d *DB) SaveReminder(ctx context.Context, r *pb.Reminder) error {
 	if err != nil {
 		return err
 	}
-	_, err = d.rclient.Write(ctx, &rspb.WriteRequest{
+	_, err = d.pclient.Write(ctx, &pspb.WriteRequest{
 		Key:   fmt.Sprintf("%v%v", REMINDER_KEY, r.GetId()),
 		Value: &anypb.Any{Value: data},
+	})
+	return err
+}
+
+func (d *DB) DeleteReminder(ctx context.Context, id int64) error {
+	d.lock.Lock()
+	defer d.lock.Unlock()
+
+	_, err := d.pclient.Delete(ctx, &pspb.DeleteRequest{
+		Key: fmt.Sprintf("%v%v", REMINDER_KEY, id),
 	})
 	return err
 }
@@ -56,7 +68,7 @@ func (d *DB) LoadReminders(ctx context.Context) ([]*pb.Reminder, error) {
 	d.lock.Lock()
 	defer d.lock.Unlock()
 
-	keys, err := d.rclient.GetKeys(ctx, &rspb.GetKeysRequest{
+	keys, err := d.pclient.GetKeys(ctx, &pspb.GetKeysRequest{
 		Prefix: REMINDER_KEY,
 	})
 	if err != nil {
@@ -65,7 +77,7 @@ func (d *DB) LoadReminders(ctx context.Context) ([]*pb.Reminder, error) {
 
 	var reminders []*pb.Reminder
 	for _, key := range keys.GetKeys() {
-		val, err := d.rclient.Read(ctx, &rspb.ReadRequest{
+		val, err := d.pclient.Read(ctx, &pspb.ReadRequest{
 			Key: key,
 		})
 		if err != nil {

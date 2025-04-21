@@ -24,6 +24,9 @@ func main() {
 	flag.Parse()
 
 	s := server.NewServer(db.GetDB())
+	if s == nil {
+		log.Fatalf("Unable to create server")
+	}
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
 	if err != nil {

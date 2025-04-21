@@ -14,6 +14,9 @@ type Server struct {
 }
 
 func NewServer(db *db.DB) *Server {
+	if db == nil {
+		return nil
+	}
 	return &Server{db: db}
 }
 
@@ -34,5 +37,23 @@ func (s *Server) ListReminders(ctx context.Context, req *pb.ListRemindersRequest
 	if err != nil {
 		return nil, err
 	}
-	return &pb.ListRemindersResponse{Reminders: reminders}, nil
+
+	var rr []*pb.Reminder
+	for _, r := range reminders {
+		if req.GetTimestampSeconds() == 0 {
+			rr = append(rr, r)
+		} else {
+			if r.GetLastRunTime() > 0 && r.GetLastRunTime()+r.GetRepeatInSeconds() < req.GetTimestampSeconds() {
+				rr = append(rr, r)
+			} else if r.GetLastRunTime() == 0 && r.GetStartTime() < req.GetTimestampSeconds() {
+				rr = append(rr, r)
+			}
+		}
+	}
+
+	return &pb.ListRemindersResponse{Reminders: rr}, nil
+}
+
+func (s *Server) DeleteReminder(ctx context.Context, req *pb.DeleteReinderRequest) (*pb.DeleteReminderResponse, error) {
+	return &pb.DeleteReminderResponse{}, s.db.DeleteReminder(ctx, req.GetId())
 }

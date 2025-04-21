@@ -34,13 +34,21 @@ message AddReminderResponse {
     int64 id = 1;
 }
 
-message ListRemindersRequest {}
+message ListRemindersRequest {
+    int64 timestamp_seconds = 1;
+}
 
 message ListRemindersResponse {
     repeated Reminder reminders = 1;
 }
 
+message DeleteReinderRequest {
+    int64 id = 1;
+}
+message DeleteReminderResponse {}
+
 service KremindService {
   rpc AddReminder(AddReminderRequest) returns (AddReminderResponse) {};
   rpc ListReminders(ListRemindersRequest) returns (ListRemindersResponse) {};
+  rpc DeleteReminder(DeleteReinderRequest) returns (DeleteReminderResponse) {};
 }

@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM golang:1.22 AS build
+FROM golang:1.23 AS build
 
 WORKDIR $GOPATH/src/github.com/brotherlogic/kremind
 
@@ -32,7 +32,7 @@ FROM gcr.io/distroless/base-debian11
 
 WORKDIR /
 
-COPY --from=build /kremind /kfremind
+COPY --from=build /kremind /kremind
 
 EXPOSE 80
 EXPOSE 8080
